@@ -95,7 +95,8 @@ def split_video_into_frames(video, frame_dir):
     subprocess.call(cmd, shell=True)
 
 def gen_semantic_feature(frame_dir, semantic_dir):
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    #device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = "cpu"
     model, preprocess = clip.load("ViT-L/14@336px", device=device)
     file_names = os.listdir(frame_dir)
     sorted_file_names = sorted(file_names)
@@ -125,7 +126,8 @@ def gen_semantic_feature(frame_dir, semantic_dir):
         np.save(output_path, features)
 
 def gen_emotion_feature(frame_dir, emotion_dir):
-    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    #device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    device = "cpu"
     model, preprocess = clip.load("ViT-L/14@336px", device=device)
     text = clip.tokenize(["exciting", "fearful", "tense", "sad", "relaxing", "neutral"]).to(device)
 
@@ -352,7 +354,8 @@ class Video2music:
     def __init__(
         self,
         name="amaai-lab/video2music",
-        device="cuda:0",
+        #device="cuda:0",
+        device="cpu",
         cache_dir=None,
         local_files_only=False,
     ):
