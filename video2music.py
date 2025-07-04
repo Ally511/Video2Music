@@ -417,6 +417,8 @@ class Video2music:
       feature_scene_offset = scene_tensor
       feature_motion = motion_tensor
       feature_semantic = semantic
+
+      output_dir = Path("./output")
   
       
   
