@@ -391,7 +391,7 @@ class Video2music:
         self.modelReg.eval()
 
         self.SF2_FILE = "soundfonts/default_sound_font.sf2"
-    def audio_generate():
+    def audio_generate(self):
 
       # feature_scene_offset = scene_offset
       # feature_motion = motion
