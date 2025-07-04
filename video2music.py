@@ -393,6 +393,7 @@ class Video2music:
         self.SF2_FILE = "soundfonts/default_sound_font.sf2"
     def audio_generate(self):
 
+
       # feature_scene_offset = scene_offset
       # feature_motion = motion
       # feature_emotion = emotion
@@ -419,6 +420,7 @@ class Video2music:
       feature_semantic = semantic
 
       output_dir = Path("./output")
+      output_dir.mkdir(parents=True)
   
       
   
@@ -680,23 +682,36 @@ class Video2music:
               MIDI.writeFile(outputFile)
           
           # Convert midi to audio (e.g., flac)
+
+          # Convert MIDI to FLAC
           fs = FluidSynth(sound_font=self.SF2_FILE)
           fs.midi_to_audio(str(f_path_midi), str(f_path_flac))
+
+            # Lade FLAC-Audio mit moviepy
+          audio_clip = mp.AudioFileClip(str(f_path_flac))
+
+            # Exportiere als MP3
+          f_path_mp3 = output_dir / "output.mp3"
+          audio_clip.write_audiofile(str(f_path_mp3), codec='libmp3lame')
+
+          return Path(str(f_path_mp3))
+        #   fs = FluidSynth(sound_font=self.SF2_FILE)
+        #   fs.midi_to_audio(str(f_path_midi), str(f_path_flac))
   
-          # Render generated music into input video
-          audio_mp = mp.AudioFileClip(str(f_path_flac))
-          video_mp = mp.VideoFileClip(str(video))
+        #   # Render generated music into input video
+        #   audio_mp = mp.AudioFileClip(str(f_path_flac))
+        #   video_mp = mp.VideoFileClip(str(video))
   
-          audio_mp = audio_mp.subclip(0, video_mp.duration )
-          final = video_mp.set_audio(audio_mp)
+        #   audio_mp = audio_mp.subclip(0, video_mp.duration )
+        #   final = video_mp.set_audio(audio_mp)
   
-          final.write_videofile(str(f_path_video_out), 
-              codec='libx264', 
-              audio_codec='aac', 
-              temp_audiofile='temp-audio.m4a', 
-              remove_temp=True
-          )
-          return Path(str(f_path_video_out))
+        #   final.write_videofile(str(f_path_video_out), 
+        #       codec='libx264', 
+        #       audio_codec='aac', 
+        #       temp_audiofile='temp-audio.m4a', 
+        #       remove_temp=True
+        #   )
+        #   return Path(str(f_path_video_out))
 
     def generate(self, video, primer, key):
 
