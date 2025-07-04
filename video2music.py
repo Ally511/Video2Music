@@ -391,6 +391,310 @@ class Video2music:
         self.modelReg.eval()
 
         self.SF2_FILE = "soundfonts/default_sound_font.sf2"
+    def audio_generate():
+
+      # feature_scene_offset = scene_offset
+      # feature_motion = motion
+      # feature_emotion = emotion
+      # feature_semantic = semantic
+      semantic = torch.randn(300, 768) 
+  
+      # 0: exciting, 1: fearful, 2: tense, 3: sad, 4: relaxing, 5: neutral 
+      emotion_tensor = torch.zeros(300, 6)
+      emotion_tensor[:, 4] = 1.0 
+  
+      scene_tensor = torch.tensor(
+          [1]*30 + [2]*40 + [3]*30 + [0]*200,  # 100 echte Frames, Rest Padding
+          dtype=torch.float32
+      )
+  
+      motion_tensor = torch.tensor(
+          [0.0, 2.3, 5.1, 4.0] + [0.0]*296,  # 4 echte Werte + 296 Padding
+          dtype=torch.float32
+      )
+  
+      feature_emotion = emotion_tensor
+      feature_scene_offset = scene_tensor
+      feature_motion = motion_tensor
+      feature_semantic = semantic
+  
+      
+  
+  
+      # primer = chord_sequence
+      primer = "C Am F G"
+      key = "C major"
+  
+      device = "cpu"
+  
+      # cuda
+      feature_scene_offset = feature_scene_offset.to(self.device)
+      feature_motion = feature_motion.to(self.device)
+      feature_emotion = feature_emotion.to(self.device)
+  
+      feature_scene_offset = feature_scene_offset.unsqueeze(0)
+      feature_motion = feature_motion.unsqueeze(0)
+      feature_emotion = feature_emotion.unsqueeze(0)
+  
+      feature_semantic = feature_semantic.to(self.device)
+      feature_semantic_list = []
+      feature_semantic = torch.unsqueeze(feature_semantic, 0)
+      feature_semantic_list.append( feature_semantic.to(self.device) )
+      #feature_semantic_list.append( feature_semantic )
+  
+      if "major" in key:
+          feature_key = torch.tensor([0])
+          feature_key = feature_key.float()
+      elif "minor" in key:
+          feature_key = torch.tensor([1])
+          feature_key = feature_key.float()
+      
+      feature_key = feature_key.to(self.device)
+  
+      with open('dataset/vevo_meta/chord.json') as json_file:
+          chordDic = json.load(json_file)
+      with open('dataset/vevo_meta/chord_inv.json') as json_file:
+          chordInvDic = json.load(json_file)
+      with open('dataset/vevo_meta/chord_root.json') as json_file:
+          chordRootDic = json.load(json_file)
+      with open('dataset/vevo_meta/chord_attr.json') as json_file:
+          chordAttrDic = json.load(json_file)
+  
+      primer = primer.strip()
+      if primer.strip() == "":
+          if "major" in key:
+              primer = "C"
+          else:
+              primer = "Am"
+      
+      pChordList = primer.split()
+  
+      primerCID = []
+      primerCID_root = []
+      primerCID_attr = []
+      
+      for pChord in pChordList:
+          if len(pChord) > 1:
+              if pChord[1] == "b":
+                  pChord = flatsharpDic [ pChord[0:2] ] + pChord[2:]
+              type_idx = 0
+              if pChord[1] == "#":
+                  pChord = pChord[0:2] + ":" + pChord[2:]
+                  type_idx = 2
+              else:
+                  pChord = pChord[0:1] + ":" + pChord[1:]
+                  type_idx = 1
+              if pChord[type_idx+1:] == "m":
+                  pChord = pChord[0:type_idx] + ":min"
+              if pChord[type_idx+1:] == "m6":
+                  pChord = pChord[0:type_idx] + ":min6"
+              if pChord[type_idx+1:] == "m7":
+                  pChord = pChord[0:type_idx] + ":min7"
+              if pChord[type_idx+1:] == "M6":
+                  pChord = pChord[0:type_idx] + ":maj6"
+              if pChord[type_idx+1:] == "M7":
+                  pChord = pChord[0:type_idx] + ":maj7"
+              if pChord[type_idx+1:] == "":
+                  pChord = pChord[0:type_idx]
+          
+          print("pchord is ", pChord)
+          chordID = chordDic[pChord]
+          primerCID.append(chordID)
+          
+          chord_arr = pChord.split(":")
+          if len(chord_arr) == 1:
+              chordRootID = chordRootDic[chord_arr[0]]
+              primerCID_root.append(chordRootID)
+              primerCID_attr.append(0)
+          elif len(chord_arr) == 2:
+              chordRootID = chordRootDic[chord_arr[0]]
+              chordAttrID = chordAttrDic[chord_arr[1]]
+              primerCID_root.append(chordRootID)
+              primerCID_attr.append(chordAttrID)
+      
+      primerCID = np.array(primerCID)
+      primerCID = torch.from_numpy(primerCID)
+      primerCID = primerCID.to(torch.long)
+      primerCID = primerCID.to(self.device)
+  
+      primerCID_root = np.array(primerCID_root)
+      primerCID_root = torch.from_numpy(primerCID_root)
+      primerCID_root = primerCID_root.to(torch.long)
+      primerCID_root = primerCID_root.to(self.device)
+      
+      primerCID_attr = np.array(primerCID_attr)
+      primerCID_attr = torch.from_numpy(primerCID_attr)
+      primerCID_attr = primerCID_attr.to(torch.long)
+      primerCID_attr = primerCID_attr.to(self.device)
+  
+      # self.model.eval()
+      # self.modelReg.eval()
+  
+      with torch.set_grad_enabled(False):
+          rand_seq = self.model.generate(feature_semantic_list=feature_semantic_list, 
+                                              feature_key=feature_key, 
+                                              feature_scene_offset=feature_scene_offset,
+                                              feature_motion=feature_motion,
+                                              feature_emotion=feature_emotion,
+                                              primer = primerCID, 
+                                              primer_root = primerCID_root,
+                                              primer_attr = primerCID_attr,
+                                              target_seq_length = 300, 
+                                              beam=0,
+                                              max_conseq_N= max_conseq_N,
+                                              max_conseq_chord = max_conseq_chord)
+          
+          y = self.modelReg(
+                      feature_semantic_list, 
+                      feature_scene_offset,
+                      feature_motion,
+                      feature_emotion)
+      
+          y   = y.reshape(y.shape[0] * y.shape[1], -1)
+  
+          y_note_density, y_loudness = torch.split(y, split_size_or_sections=1, dim=1)
+          y_note_density_np = y_note_density.cpu().numpy()
+          y_note_density_np = np.round(y_note_density_np).astype(int)
+          y_note_density_np = np.clip(y_note_density_np, 0, 40)
+  
+          y_loudness_np = y_loudness.cpu().numpy()
+          y_loudness_np_lv = (y_loudness_np * 100).astype(int)
+          y_loudness_np_lv = np.clip(y_loudness_np_lv, 0, 50)
+          velolistExp = []
+          exponent = 0.3
+          for item in y_loudness_np_lv:
+              loudness = item[0]
+              velocity_exp = np.round(((loudness - min_loudness) / (max_loudness - min_loudness)) ** exponent * (max_velocity - min_velocity) + min_velocity)
+              velocity_exp = int(velocity_exp)
+              velolistExp.append(velocity_exp)
+          
+          densitylist = []
+          for item in y_loudness_np_lv:
+              density = item[0]
+              if density <= 6:
+                  densitylist.append(0)
+              elif density <= 12:
+                  densitylist.append(1)
+              elif density <= 18:
+                  densitylist.append(2)
+              elif density <= 24:
+                  densitylist.append(3)
+              else:
+                  densitylist.append(4)
+          
+          # generated ChordID to ChordSymbol
+          chord_genlist = []
+          chordID_genlist= rand_seq[0].cpu().numpy()
+          for i in chordID_genlist:
+              chord_genlist.append(chordInvDic[str(i)])
+          
+          chord_offsetlist = convert_format_id_to_offset(chord_genlist)
+          f_path_midi = output_dir / "output.mid"
+          f_path_flac = output_dir / "output.flac"
+          f_path_video_out = output_dir / "output.mp4"
+  
+          # ChordSymbol to MIDI file with voicing
+          MIDI = MIDIFile(1)
+          MIDI.addTempo(0, 0, tempo)
+          midi_chords_orginal = []
+          for i, k in enumerate(chord_genlist):
+              k = k.replace(":", "")
+              if k == "N":
+                  midi_chords_orginal.append([])
+              else:
+                  midi_chords_orginal.append(Chord(k).getMIDI("c", 4))
+          midi_chords = voice(midi_chords_orginal)
+          trans = traspose_key_dic[key]
+  
+          for i, chord in enumerate(midi_chords):
+              if densitylist[i] == 0:
+                  if len(chord) >= 4:
+                      if chord_offsetlist[i] % 2 == 0:
+                          MIDI.addNote(0, 0, chord[0]+trans,  i * duration + 0 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 1 ,  duration,  velolistExp[i])
+                      else:
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 0 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[3]+trans,  i * duration + 1 ,  duration,  velolistExp[i])
+              elif densitylist[i] == 1:
+                  if len(chord) >= 4:
+                      if chord_offsetlist[i] % 2 == 0:
+                          MIDI.addNote(0, 0, chord[0]+trans,  i * duration + 0 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0.5 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 1 ,  duration,  velolistExp[i])
+                      else:
+                          MIDI.addNote(0, 0, chord[3]+trans,  i * duration + 0 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0.5 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 1 ,  duration,  velolistExp[i])
+              elif densitylist[i] == 2:
+                  if len(chord) >= 4:
+                      if chord_offsetlist[i] % 2 == 0:
+                          MIDI.addNote(0, 0, chord[0]+trans,  i * duration + 0 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0.5 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 1 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[3]+trans,  i * duration + 1.5 ,  duration,  velolistExp[i])
+                      else:
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 0 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0.5 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 1 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[3]+trans,  i * duration + 1.5 ,  duration,  velolistExp[i])
+              elif densitylist[i] == 3:
+                  if len(chord) >= 4:
+                      if chord_offsetlist[i] % 2 == 0:
+                          MIDI.addNote(0, 0, chord[0]+trans,  i * duration + 0 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0.25 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 0.5 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0.75 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[3]+trans,  i * duration + 1 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 1.5 ,  duration,  velolistExp[i])
+                      else:
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[0]+trans,  i * duration + 0.25 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0.5 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 0.75 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[3]+trans,  i * duration + 1 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 1.5 ,  duration,  velolistExp[i])
+              elif densitylist[i] == 4:
+                  if len(chord) >= 4:
+                      if chord_offsetlist[i] % 2 == 0:
+                          MIDI.addNote(0, 0, chord[0]+trans,  i * duration + 0 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0.25 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 0.5 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0.75 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[3]+trans,  i * duration + 1 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 1.25 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 1.5 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 1.75 ,  duration,  velolistExp[i])
+                      else:
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[0]+trans,  i * duration + 0.25 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 0.5 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 0.75 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[3]+trans,  i * duration + 1 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 1.25 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[1]+trans,  i * duration + 1.5 ,  duration,  velolistExp[i])
+                          MIDI.addNote(0, 0, chord[2]+trans,  i * duration + 1.75 ,  duration,  velolistExp[i])
+          
+          with open(f_path_midi, "wb") as outputFile:
+              MIDI.writeFile(outputFile)
+          
+          # Convert midi to audio (e.g., flac)
+          fs = FluidSynth(sound_font=self.SF2_FILE)
+          fs.midi_to_audio(str(f_path_midi), str(f_path_flac))
+  
+          # Render generated music into input video
+          audio_mp = mp.AudioFileClip(str(f_path_flac))
+          video_mp = mp.VideoFileClip(str(video))
+  
+          audio_mp = audio_mp.subclip(0, video_mp.duration )
+          final = video_mp.set_audio(audio_mp)
+  
+          final.write_videofile(str(f_path_video_out), 
+              codec='libx264', 
+              audio_codec='aac', 
+              temp_audiofile='temp-audio.m4a', 
+              remove_temp=True
+          )
+          return Path(str(f_path_video_out))
 
     def generate(self, video, primer, key):
 
