@@ -391,14 +391,15 @@ class Video2music:
         self.modelReg.eval()
 
         self.SF2_FILE = "soundfonts/default_sound_font.sf2"
-    def audio_generate(self):
+      
+    def audio_generate(self, emotion, semantic):
 
 
       # feature_scene_offset = scene_offset
       # feature_motion = motion
-      # feature_emotion = emotion
-      # feature_semantic = semantic
-      semantic = torch.randn(300, 768) 
+      feature_emotion = emotion
+      feature_semantic = semantic
+      # semantic = torch.randn(300, 768) 
   
       # 0: exciting, 1: fearful, 2: tense, 3: sad, 4: relaxing, 5: neutral 
       emotion_tensor = torch.zeros(300, 6)
@@ -414,10 +415,10 @@ class Video2music:
           dtype=torch.float32
       )
   
-      feature_emotion = emotion_tensor
+      # feature_emotion = emotion_tensor
       feature_scene_offset = scene_tensor
       feature_motion = motion_tensor
-      feature_semantic = semantic
+      # feature_semantic = semantic
 
       output_dir = Path("./output")
       output_dir.mkdir(parents=True)
