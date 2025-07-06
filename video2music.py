@@ -392,7 +392,7 @@ class Video2music:
 
         self.SF2_FILE = "soundfonts/default_sound_font.sf2"
       
-    def audio_generate(self, emotion, semantic):
+    def audio_generate(self, emotion, semantic, primer, key):
 
 
       # feature_scene_offset = scene_offset
@@ -421,14 +421,16 @@ class Video2music:
       # feature_semantic = semantic
 
       output_dir = Path("./output")
-      output_dir.mkdir(parents=True)
+      if not output_dir.exists():
+        output_dir.mkdir(parents=True)
+      #output_dir.mkdir(parents=True)
   
       
   
   
       # primer = chord_sequence
-      primer = "C Am F G"
-      key = "C major"
+        #   primer = "C Am F G"
+        #   key = "C major"
   
       device = "cpu"
   
