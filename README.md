@@ -1,5 +1,3 @@
-<div align="center">
-
 # Video2Music: Suitable Music Generation from Videos using an Affective Multimodal Transformer model
 
 To try out the demo, there are two options. There is one notebook that is intended to be used in colab (Video2Music_colab.ipynb) and one that you can run locally (Video2Music_local.ipynb).
