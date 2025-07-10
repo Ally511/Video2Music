@@ -63,6 +63,12 @@ pip install -r requirements.txt
 
 * Download the soundfont file `default_sound_font.sf2` from [HERE](https://drive.google.com/file/d/1B9qjgimW9h6Gg5k8PZNt_ArWwSMJ4WuJ/view?usp=drive_link) and put the file directly under this folder (`soundfonts/`)
 
+* Install CLIP, to do that download the CLIP-main.zip from [HERE](https://github.com/openai/CLIP) by clicking on Code and then on Local. Unzip the file and then execute the following lines:
+```shell
+cd clip_src/CLIP-main
+pip install .
+```
+
 
 ## Getting Started
 
